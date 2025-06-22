@@ -12,9 +12,9 @@
 /front-end/.eslintcache
 
 # === .NET 8 Back-End ===
-/back-end/bin/
-/back-end/obj/
-/back-end/.vs/
+/back-end/**/bin/
+/back-end/**/obj/
+/back-end/PaymentAppAPI/.vs/
 /back-end/.vscode/
 /back-end/*.user
 /back-end/*.suo
