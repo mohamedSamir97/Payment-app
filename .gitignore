@@ -1,0 +1,46 @@
+# === React Front-End ===
+/front-end/node_modules/
+/front-end/build/
+/front-end/.env
+/front-end/.DS_Store
+/front-end/npm-debug.log*
+/front-end/yarn-debug.log*
+/front-end/yarn-error.log*
+/front-end/.parcel-cache/
+/front-end/.next/
+/front-end/.turbo/
+/front-end/.eslintcache
+
+# === .NET 8 Back-End ===
+/back-end/bin/
+/back-end/obj/
+/back-end/.vs/
+/back-end/.vscode/
+/back-end/*.user
+/back-end/*.suo
+/back-end/*.userosscache
+/back-end/*.sln.docstates
+/back-end/.idea/
+/back-end/*.dbmdl
+/back-end/*.pfx
+/back-end/*.publishsettings
+/back-end/Properties/launchSettings.json
+
+# === Global ===
+*.log
+*.tmp
+*.swp
+*.bak
+*.orig
+*.rej
+*.sdf
+*.cache
+*.pidb
+*.suo
+*.user
+*.userprefs
+*.db
+*.sqlite
+*.sqlite3
+*.env
+.env.*
