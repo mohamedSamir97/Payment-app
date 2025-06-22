@@ -37,5 +37,16 @@ namespace PaymentAppAPI.Controllers
             }
             return Ok(response);
         }
+
+        [HttpPost("refund")]
+        public async Task<IActionResult> RefundPayment([FromBody] RefundRequestDto refundDetails)
+        {
+            var response = await _paymentService.ProcessRefundAsync(refundDetails);
+            if (response.Status == "Failed")
+            {
+                return BadRequest(response);
+            }
+            return Ok(response);
+        }
     }
 }

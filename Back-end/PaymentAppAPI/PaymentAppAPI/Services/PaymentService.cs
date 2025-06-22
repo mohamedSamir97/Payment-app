@@ -89,6 +89,118 @@ namespace PaymentAppAPI.Services
             };
         }
 
+        public async Task<PaymentResponseDto> ProcessRefundAsync(RefundRequestDto refundDetails)
+        {
+            var payment = await _context.Payments
+                .Include(p => p.Card) // Important: Include the related Card
+                .FirstOrDefaultAsync(p => p.TransactionId == refundDetails.TransactionId);
+
+            if (payment == null)
+            {
+                return new PaymentResponseDto { TransactionId = GenerateTransactionId(), Status = "Failed", Message = "Transaction not found." };
+            }
+
+            if (payment.Status != PaymentStatus.Held)
+            {
+                return new PaymentResponseDto { TransactionId = GenerateTransactionId(), Status = "Failed", Message = "Payment is not in a refundable state." };
+            }
+
+            if (payment.RefundCode != refundDetails.RefundCode || DateTime.UtcNow > payment.RefundCodeExpiry)
+            {
+                return new PaymentResponseDto { TransactionId = GenerateTransactionId(), Status = "Failed", Message = "Invalid or expired refund code." };
+            }
+
+            // Process refund
+            payment.Status = PaymentStatus.Refunded;
+            if (payment.Card != null)
+            {
+                payment.Card.Balance += payment.Amount;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return new PaymentResponseDto
+            {
+                TransactionId = payment.TransactionId,
+                Status = payment.Status.ToString(),
+                Message = "Payment successfully refunded."
+            };
+        }
+
+        public async Task<PaginatedResponseDto<PaymentReportDto>> GetPaymentsReportAsync(int pageNumber, int pageSize, string? status, DateTime? startDate, DateTime? endDate)
+        {
+            var query = _context.Payments.AsQueryable();
+
+            if (!string.IsNullOrEmpty(status) && Enum.TryParse<PaymentStatus>(status, true, out var paymentStatus))
+            {
+                query = query.Where(p => p.Status == paymentStatus);
+            }
+
+            if (startDate.HasValue)
+            {
+                query = query.Where(p => p.TransactionDate >= startDate.Value);
+            }
+
+            if (endDate.HasValue)
+            {
+                query = query.Where(p => p.TransactionDate <= endDate.Value);
+            }
+
+            var totalRecords = await query.CountAsync();
+            var data = await query
+                .OrderByDescending(p => p.TransactionDate)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(p => new PaymentReportDto
+                {
+                    TransactionId = p.TransactionId,
+                    Amount = p.Amount,
+                    Status = p.Status.ToString(),
+                    TransactionDate = p.TransactionDate
+                })
+                .ToListAsync();
+
+            return new PaginatedResponseDto<PaymentReportDto>
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalRecords = totalRecords,
+                TotalPages = (int)Math.Ceiling(totalRecords / (double)pageSize),
+                Data = data
+            };
+        }
+
+        public async Task<PaginatedResponseDto<CardBalanceReportDto>> GetCardBalancesReportAsync(int pageNumber, int pageSize, string? lastFourDigits)
+        {
+            var query = _context.Cards.AsQueryable();
+
+            if (!string.IsNullOrEmpty(lastFourDigits))
+            {
+                query = query.Where(c => c.LastFourDigits.Contains(lastFourDigits));
+            }
+
+            var totalRecords = await query.CountAsync();
+            var data = await query
+                .OrderBy(c => c.LastFourDigits)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(c => new CardBalanceReportDto
+                {
+                    LastFourDigits = c.LastFourDigits,
+                    Balance = c.Balance
+                })
+                .ToListAsync();
+
+            return new PaginatedResponseDto<CardBalanceReportDto>
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalRecords = totalRecords,
+                TotalPages = (int)Math.Ceiling(totalRecords / (double)pageSize),
+                Data = data
+            };
+        }
+
         // --- Private Helper Methods ---
 
         private bool LuhnCheck(string cardNumber)
