@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PaymentAppAPI.Data;
+using PaymentAppAPI.Services.Interfaces;
+using PaymentAppAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +18,8 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 // 2. Add the DbContext
 builder.Services.AddDbContext<PaymentDbContext>(options =>
     options.UseSqlServer(connectionString));
+
+builder.Services.AddScoped<IPaymentService, PaymentService>();
 
 var app = builder.Build();
 
